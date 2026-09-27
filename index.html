@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant de rédaction — Protocole</title>
+<style>
+  :root{
+    --paper: #F3EFE6;
+    --paper-edge: #E4DDCC;
+    --ink: #1E2A38;
+    --ink-soft: #4A5568;
+    --muted: #6B655A;
+    --seal: #7A2432;
+    --seal-soft: #F2E3E1;
+    --gold: #A9812F;
+    --gold-soft: #F1E9D2;
+    --focus: #2B4C6F;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ height: 100%; }
+  body{
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    padding: 40px 20px 80px;
+  }
+  .sheet{
+    max-width: 720px;
+    margin: 0 auto;
+    background: #FBF9F3;
+    border: 1px solid var(--paper-edge);
+    box-shadow: 0 20px 50px rgba(30,42,56,0.10);
+    border-radius: 4px;
+    padding: 42px 44px 36px;
+  }
+  header{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+  .seal-mark{
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  h1{
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    font-weight: 400;
+    font-size: 24px;
+    margin: 0;
+    color: var(--ink);
+  }
+  .subtitle{
+    font-size: 13.5px;
+    color: var(--muted);
+    margin: 4px 0 30px;
+    padding-left: 56px;
+  }
+  fieldset{
+    border: none;
+    padding: 0;
+    margin: 0 0 22px;
+  }
+  label{
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
+  }
+  input[type=text], textarea, select{
+    width: 100%;
+    font-family: inherit;
+    font-size: 14.5px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid #D8D2C4;
+    border-radius: 3px;
+    padding: 10px 12px;
+    resize: vertical;
+  }
+  input[type=text]:focus, textarea:focus, select:focus{
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+  .row{ display: flex; gap: 16px; }
+  .row > div{ flex: 1; }
+  .grid2{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  button{
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+  }
+  .btn-primary{
+    background: var(--seal);
+    color: #FBF9F3;
+    font-size: 14.5px;
+    padding: 12px 22px;
+    width: 100%;
+  }
+  .btn-primary:hover{ background: #63202B; }
+  .btn-primary:disabled{ background: #B7ABA5; cursor: default; }
+  .draft-zone{
+    margin-top: 30px;
+    display: none;
+  }
+  .draft-zone.visible{ display: block; }
+  .draft-label{
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .draft-label span{ font-size: 12.5px; color: var(--ink-soft); }
+  .draft-actions button{
+    background: none;
+    color: var(--muted);
+    font-size: 12.5px;
+    text-decoration: underline;
+    padding: 2px 6px;
+  }
+  #draft{
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    font-size: 15.5px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    border-left: 3px solid var(--gold);
+    padding: 4px 0 4px 20px;
+    min-height: 140px;
+  }
+  #draft:focus{ outline: none; background: #FDFCF8; }
+  .chips{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .chip{
+    background: var(--gold-soft);
+    color: #6B5220;
+    border: 1px solid #E3D6AC;
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 20px;
+  }
+  .chip:hover{ background: #EADFB8; }
+  .custom-adjust{
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .custom-adjust input{ flex: 1; }
+  .custom-adjust button{
+    background: var(--ink);
+    color: #fff;
+    font-size: 13px;
+    padding: 0 18px;
+    white-space: nowrap;
+  }
+  .status{
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 12px;
+    min-height: 18px;
+  }
+  .status.error{ color: var(--seal); }
+  details{
+    margin-top: 34px;
+    border-top: 1px solid var(--paper-edge);
+    padding-top: 16px;
+  }
+  summary{
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--muted);
+    list-style: none;
+  }
+  summary::-webkit-details-marker{ display: none; }
+  summary:before{ content: "⚙ "; }
+  .history-details > summary:before{ content: "🕘 "; }
+  .settings-body{ margin-top: 16px; }
+  .hint{
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .hint a{ color: var(--focus); }
+  .sync-error{ color: var(--seal); }
+  .code-row{ display: flex; gap: 8px; }
+  .code-row input{ flex: 1; }
+  .code-row button{
+    background: var(--ink);
+    color: #fff;
+    font-size: 13px;
+    padding: 0 16px;
+    white-space: nowrap;
+  }
+  .hint-row{
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: -12px 0 22px;
+  }
+  .hint-row input[type=checkbox]{ margin: 3px 0 0; }
+  .hint-row label{ margin: 0; font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
+  .history-search{ margin-bottom: 14px; }
+  .history-item{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--paper-edge);
+  }
+  .history-item:last-child{ border-bottom: none; }
+  .history-meta{ font-size: 13px; color: var(--ink); }
+  .history-meta .date{ color: var(--muted); font-size: 11.5px; display: block; margin-top: 2px; }
+  .history-actions{ flex-shrink: 0; }
+  .history-actions button{
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 2px 6px;
+  }
+  .history-empty{ font-size: 13px; color: var(--muted); font-style: italic; }
+  .clear-all{
+    margin-top: 14px;
+    background: none;
+    color: var(--seal);
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <header>
+    <div class="seal-mark">P</div>
+    <h1>Assistant de rédaction</h1>
+  </header>
+  <div class="subtitle">Brouillons de courriers et lettres, dans le ton du service</div>
+
+  <fieldset>
+    <label for="occasion">Destinataire / occasion</label>
+    <input type="text" id="occasion" placeholder="Ex. : Invitation au Ministre à l'occasion de la visite officielle du 14 mars">
+  </fieldset>
+
+  <div class="hint-row" id="historyHintRow" style="display:none;">
+    <input type="checkbox" id="useHistoryContext" checked>
+    <label for="useHistoryContext" id="historyHintLabel"></label>
+  </div>
+
+  <fieldset>
+    <label for="points">Points à mentionner</label>
+    <textarea id="points" rows="4" placeholder="Notez simplement les idées, dans l'ordre que vous voulez — les phrases seront reformulées."></textarea>
+  </fieldset>
+
+  <div class="grid2">
+    <div>
+      <label for="tone">Registre</label>
+      <select id="tone">
+        <option value="très formel, protocolaire">Très formel</option>
+        <option value="formel standard" selected>Formel standard</option>
+        <option value="formel mais chaleureux">Formel, chaleureux</option>
+      </select>
+    </div>
+    <div>
+      <label for="length">Longueur</label>
+      <select id="length">
+        <option value="courte (une dizaine de lignes)">Courte</option>
+        <option value="moyenne" selected>Moyenne</option>
+        <option value="détaillée">Détaillée</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="generate">Générer le brouillon</button>
+  <div class="status" id="status"></div>
+
+  <div class="draft-zone" id="draftZone">
+    <div class="draft-label">
+      <span>Brouillon — modifiable directement</span>
+      <div class="draft-actions">
+        <button id="saveHistory">Enregistrer</button>
+        <button id="undo" style="display:none;">Annuler le dernier ajustement</button>
+        <button id="copy">Copier</button>
+      </div>
+    </div>
+    <div id="draft" contenteditable="true"></div>
+
+    <div class="chips">
+      <button class="chip" data-instr="Raccourcis nettement le texte, sans perdre les informations essentielles.">Plus court</button>
+      <button class="chip" data-instr="Rends le ton plus formel et protocolaire, avec les formules d'usage appropriées.">Plus formel</button>
+      <button class="chip" data-instr="Simplifie la formulation : phrases courtes, une idée par phrase, moins de subordonnées.">Phrases plus courtes</button>
+      <button class="chip" data-instr="Rends le ton un peu plus chaleureux et personnel, tout en restant respectueux.">Plus chaleureux</button>
+      <button class="chip" data-instr="Allège les formules protocolaires répétées, va plus directement à l'essentiel.">Moins de formules</button>
+    </div>
+
+    <div class="custom-adjust">
+      <input type="text" id="customInstr" placeholder="Autre consigne (ex. : insister sur la ponctualité)…">
+      <button id="applyCustom">Ajuster</button>
+    </div>
+  </div>
+
+  <details>
+    <summary>Réglages (clé API, profil de style)</summary>
+    <div class="settings-body">
+      <fieldset>
+        <label for="syncCode">Code d'accès partagé (pour retrouver vos réglages et votre historique sur un autre appareil)</label>
+        <div class="code-row">
+          <input type="text" id="syncCode" placeholder="Ex. : PRT-4K9QXZ">
+          <button id="generateCode">Générer</button>
+        </div>
+        <div class="hint" id="syncStatus"></div>
+      </fieldset>
+      <fieldset>
+        <label for="apiKey">Clé API Gemini (gratuite sur aistudio.google.com)</label>
+        <input type="text" id="apiKey" placeholder="Collez votre clé ici">
+      </fieldset>
+      <fieldset>
+        <label for="styleProfile">Profil de style</label>
+        <textarea id="styleProfile" rows="5"></textarea>
+        <div class="hint">Décrit la manière d'écrire à respecter. Modifiez ce texte, ou collez-y un ou deux vrais courriers (noms retirés) pour que le ton colle encore mieux.</div>
+      </fieldset>
+    </div>
+  </details>
+
+  <details class="history-details">
+    <summary>Historique des courriers</summary>
+    <div class="settings-body">
+      <input type="text" id="historySearch" class="history-search" placeholder="Rechercher par destinataire ou occasion…">
+      <div id="historyList"></div>
+      <button class="clear-all" id="clearHistory">Vider tout l'historique</button>
+    </div>
+  </details>
+</div>
+
+<script>
+const DEFAULT_PROFILE = `Courrier officiel d'un chef de protocole sénégalais. Formules d'appel et de politesse d'usage dans l'administration ("J'ai l'honneur de porter à votre connaissance...", "Je vous prie d'agréer, Madame/Monsieur, l'expression de ma considération distinguée."). Phrases construites mais claires, pas de familiarité, précision sur les titres et rangs des personnes mentionnées.`;
+
+const el = (id) => document.getElementById(id);
+const apiKeyEl = el('apiKey'), profileEl = el('styleProfile'), codeEl = el('syncCode');
+
+const LOCAL_APIKEY_KEY = 'protocole_apiKey';
+const LOCAL_PROFILE_KEY = 'protocole_profile';
+const LOCAL_HISTORY_KEY = 'protocole_history';
+const LOCAL_CODE_KEY = 'protocole_syncCode';
+
+let historyCache = [];
+let previousDraft = null;
+let syncTimer = null;
+
+function getCode(){ return codeEl.value.trim(); }
+
+function setStatus(msg, isError){
+  const s = el('status');
+  s.textContent = msg || '';
+  s.className = 'status' + (isError ? ' error' : '');
+}
+
+function setSyncStatus(msg, isError){
+  const s = el('syncStatus');
+  s.textContent = msg || '';
+  s.className = 'hint' + (isError ? ' sync-error' : '');
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// --- État : local sur cet appareil, ou synchronisé via un code d'accès ---
+async function pullState(){
+  const code = getCode();
+  if(!code){
+    apiKeyEl.value = localStorage.getItem(LOCAL_APIKEY_KEY) || '';
+    profileEl.value = localStorage.getItem(LOCAL_PROFILE_KEY) || DEFAULT_PROFILE;
+    historyCache = JSON.parse(localStorage.getItem(LOCAL_HISTORY_KEY) || '[]');
+    renderHistory('');
+    setSyncStatus('');
+    return;
+  }
+  setSyncStatus('Chargement du code…');
+  try{
+    const resp = await fetch('/api/state?code=' + encodeURIComponent(code));
+    if(!resp.ok) throw new Error('Erreur ' + resp.status);
+    const data = await resp.json();
+    apiKeyEl.value = data.apiKey || '';
+    profileEl.value = data.profile || DEFAULT_PROFILE;
+    historyCache = data.history || [];
+    renderHistory(el('historySearch').value);
+    setSyncStatus('Synchronisé avec ce code.');
+    setTimeout(() => setSyncStatus(''), 2500);
+  }catch(err){
+    setSyncStatus('Connexion impossible (' + err.message + ') — copie locale utilisée en attendant.', true);
+    historyCache = JSON.parse(localStorage.getItem(LOCAL_HISTORY_KEY) || '[]');
+    renderHistory('');
+  }
+}
+
+async function pushState(){
+  const code = getCode();
+  if(!code){
+    localStorage.setItem(LOCAL_APIKEY_KEY, apiKeyEl.value);
+    localStorage.setItem(LOCAL_PROFILE_KEY, profileEl.value);
+    localStorage.setItem(LOCAL_HISTORY_KEY, JSON.stringify(historyCache));
+    return;
+  }
+  try{
+    const resp = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, apiKey: apiKeyEl.value, profile: profileEl.value, history: historyCache })
+    });
+    if(!resp.ok) throw new Error('Erreur ' + resp.status);
+  }catch(err){
+    setSyncStatus('Échec de la synchronisation (' + err.message + ') — nouvel essai au prochain changement.', true);
+  }
+}
+
+function scheduleSync(){
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pushState, 700);
+}
+
+codeEl.value = localStorage.getItem(LOCAL_CODE_KEY) || '';
+codeEl.addEventListener('change', () => {
+  localStorage.setItem(LOCAL_CODE_KEY, codeEl.value.trim());
+  pullState();
+});
+el('generateCode').addEventListener('click', () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'PRT-';
+  for(let i = 0; i < 6; i++){ code += chars[Math.floor(Math.random() * chars.length)]; }
+  codeEl.value = code;
+  localStorage.setItem(LOCAL_CODE_KEY, code);
+  pushState();
+  setSyncStatus('Nouveau code créé — notez-le pour le saisir sur vos autres appareils.');
+});
+
+apiKeyEl.addEventListener('input', scheduleSync);
+profileEl.addEventListener('input', scheduleSync);
+
+// --- Historique ---
+function findMatches(text){
+  const words = text.toLowerCase().split(/[^a-zàâçéèêëîïôûùüÿñæœ0-9]+/).filter(w => w.length >= 4);
+  if(!words.length) return [];
+  return historyCache.filter(h => words.some(w => h.occasion.toLowerCase().includes(w)));
+}
+
+function checkHistoryMatches(){
+  const matches = findMatches(el('occasion').value);
+  const row = el('historyHintRow');
+  if(matches.length){
+    row.style.display = 'flex';
+    el('historyHintLabel').textContent = matches.length === 1
+      ? `Un courrier précédent proche a été trouvé (${matches[0].date}) — l'inclure comme contexte pour rester cohérent`
+      : `${matches.length} courriers précédents proches trouvés — inclure le plus récent comme contexte`;
+    row.dataset.matchId = matches[0].id;
+  } else {
+    row.style.display = 'none';
+    row.dataset.matchId = '';
+  }
+}
+
+function renderHistory(filter){
+  const q = (filter || '').toLowerCase().trim();
+  const filtered = q ? historyCache.filter(h => h.occasion.toLowerCase().includes(q)) : historyCache;
+  const list = el('historyList');
+  if(!filtered.length){
+    list.innerHTML = '<div class="history-empty">Aucun courrier enregistré pour le moment.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(h => `
+    <div class="history-item">
+      <div class="history-meta">${escapeHtml(h.occasion)}<span class="date">${h.date}</span></div>
+      <div class="history-actions">
+        <button class="reload-btn" data-id="${h.id}">Reprendre</button>
+        <button class="delete-btn" data-id="${h.id}">Supprimer</button>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.reload-btn').forEach(b => b.addEventListener('click', () => reloadEntry(b.dataset.id)));
+  list.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => deleteEntry(b.dataset.id)));
+}
+
+function reloadEntry(id){
+  const entry = historyCache.find(h => String(h.id) === String(id));
+  if(!entry) return;
+  el('occasion').value = entry.occasion;
+  el('points').value = entry.points;
+  el('tone').value = entry.tone;
+  el('length').value = entry.length;
+  el('draft').textContent = entry.draft;
+  el('draftZone').classList.add('visible');
+  el('undo').style.display = 'none';
+  previousDraft = null;
+  checkHistoryMatches();
+  setStatus("Courrier repris depuis l'historique.");
+  setTimeout(() => setStatus(''), 2000);
+}
+
+function deleteEntry(id){
+  if(!confirm('Supprimer ce courrier de l\'historique ?')) return;
+  historyCache = historyCache.filter(h => String(h.id) !== String(id));
+  pushState();
+  renderHistory(el('historySearch').value);
+}
+
+// --- Génération ---
+async function callGemini(prompt){
+  const key = apiKeyEl.value.trim();
+  if(!key){
+    setStatus('Ajoutez votre clé API Gemini dans "Réglages" avant de générer.', true);
+    return null;
+  }
+  setStatus('Rédaction en cours…');
+  el('generate').disabled = true;
+  try{
+    const resp = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + encodeURIComponent(key),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      }
+    );
+    const data = await resp.json();
+    if(!resp.ok){
+      const msg = data && data.error ? data.error.message : ('Erreur ' + resp.status);
+      setStatus(msg, true);
+      return null;
+    }
+    const text = data.candidates && data.candidates[0] && data.candidates[0].content.parts.map(p => p.text).join('');
+    if(!text){ setStatus('Réponse vide — réessayez.', true); return null; }
+    setStatus('');
+    return text.trim();
+  }catch(err){
+    setStatus('Impossible de contacter le service : ' + err.message, true);
+    return null;
+  }finally{
+    el('generate').disabled = false;
+  }
+}
+
+el('generate').addEventListener('click', async () => {
+  const occasion = el('occasion').value.trim();
+  const points = el('points').value.trim();
+  if(!occasion || !points){
+    setStatus('Renseignez le destinataire/occasion et les points à mentionner.', true);
+    return;
+  }
+  let contextBlock = '';
+  const hintRow = el('historyHintRow');
+  if(hintRow.style.display !== 'none' && el('useHistoryContext').checked && hintRow.dataset.matchId){
+    const match = historyCache.find(h => String(h.id) === String(hintRow.dataset.matchId));
+    if(match){
+      contextBlock = `
+
+Contexte — courrier précédent pour ce même destinataire ou une occasion proche (${match.date}), à garder en tête pour rester cohérent, sans le répéter :
+"""
+${match.draft}
+"""`;
+    }
+  }
+  const prompt = `${profileEl.value}
+${contextBlock}
+
+Rédige un courrier en français, registre : ${el('tone').value}, longueur : ${el('length').value}.
+Destinataire / occasion : ${occasion}
+Points à mentionner : ${points}
+
+Réponds uniquement avec le texte du courrier, sans commentaire ni titre ajouté.`;
+  const result = await callGemini(prompt);
+  if(result){
+    el('draft').textContent = result;
+    el('draftZone').classList.add('visible');
+    el('undo').style.display = 'none';
+    previousDraft = null;
+  }
+});
+
+async function adjust(instruction){
+  const current = el('draft').textContent;
+  if(!current) return;
+  const prompt = `${profileEl.value}
+
+Voici un brouillon de courrier :
+"""
+${current}
+"""
+
+Consigne d'ajustement : ${instruction}
+Réécris le courrier en appliquant cette consigne, en gardant les mêmes informations et le même destinataire. Réponds uniquement avec le texte ajusté.`;
+  const result = await callGemini(prompt);
+  if(result){
+    previousDraft = current;
+    el('draft').textContent = result;
+    el('undo').style.display = 'inline';
+  }
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => adjust(chip.dataset.instr));
+});
+
+el('applyCustom').addEventListener('click', () => {
+  const instr = el('customInstr').value.trim();
+  if(instr){ adjust(instr); el('customInstr').value = ''; }
+});
+el('customInstr').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ el('applyCustom').click(); }
+});
+
+el('undo').addEventListener('click', () => {
+  if(previousDraft !== null){
+    el('draft').textContent = previousDraft;
+    previousDraft = null;
+    el('undo').style.display = 'none';
+  }
+});
+
+el('copy').addEventListener('click', () => {
+  navigator.clipboard.writeText(el('draft').textContent).then(() => {
+    setStatus('Copié dans le presse-papiers.');
+    setTimeout(() => setStatus(''), 2000);
+  });
+});
+
+el('saveHistory').addEventListener('click', () => {
+  const draftText = el('draft').textContent;
+  if(!draftText){ setStatus('Générez d\'abord un brouillon.', true); return; }
+  historyCache.unshift({
+    id: Date.now(),
+    date: new Date().toLocaleDateString('fr-FR'),
+    occasion: el('occasion').value.trim(),
+    points: el('points').value.trim(),
+    tone: el('tone').value,
+    length: el('length').value,
+    draft: draftText
+  });
+  pushState();
+  renderHistory(el('historySearch').value);
+  setStatus('Enregistré dans l\'historique.');
+  setTimeout(() => setStatus(''), 2000);
+});
+
+el('historySearch').addEventListener('input', () => renderHistory(el('historySearch').value));
+
+el('clearHistory').addEventListener('click', () => {
+  if(!confirm("Vider tout l'historique ? Cette action est irréversible.")) return;
+  historyCache = [];
+  pushState();
+  renderHistory('');
+});
+
+el('occasion').addEventListener('input', checkHistoryMatches);
+
+pullState();
+</script>
+
+</body>
+</html>
